@@ -24,6 +24,7 @@ type SessionMetadata struct {
 // Session represents a conversation session stored as JSON
 type Session struct {
 	ID       string           `json:"id"`
+	ShortID  string           `json:"short_id"`
 	Messages []SessionMessage `json:"messages"`
 	Metadata SessionMetadata  `json:"metadata"`
 }
@@ -33,6 +34,7 @@ func NewSession(model, initialQuery string) *Session {
 	now := time.Now()
 	return &Session{
 		ID:       generateSessionID(now),
+		ShortID:  GenerateShortID(now),
 		Messages: make([]SessionMessage, 0),
 		Metadata: SessionMetadata{
 			Model:        model,
@@ -83,6 +85,7 @@ func (s *Session) GetLastMessages(n int) []SessionMessage {
 // SessionInfo represents summary information for listing sessions
 type SessionInfo struct {
 	ID           string    `json:"id"`
+	ShortID      string    `json:"short_id"`
 	CreatedAt    time.Time `json:"created_at"`
 	InitialQuery string    `json:"initial_query"`
 	MessageCount int       `json:"message_count"`
@@ -92,6 +95,7 @@ type SessionInfo struct {
 func (s *Session) ToInfo() SessionInfo {
 	return SessionInfo{
 		ID:           s.ID,
+		ShortID:      s.ShortID,
 		CreatedAt:    s.Metadata.CreatedAt,
 		InitialQuery: s.Metadata.InitialQuery,
 		MessageCount: len(s.Messages),

@@ -27,7 +27,6 @@ type InteractiveSession struct {
 	session        *session.Session
 	config         *config.Config
 	reader         *bufio.Reader
-	quit           chan bool
 	firstMessage   bool
 }
 
@@ -46,7 +45,6 @@ func NewInteractiveSession(cfg *config.Config) (*InteractiveSession, error) {
 		sessionManager: sessionManager,
 		config:         cfg,
 		reader:         bufio.NewReader(os.Stdin),
-		quit:           make(chan bool),
 		firstMessage:   true,
 	}, nil
 }
@@ -61,7 +59,8 @@ func (is *InteractiveSession) Run() error {
 		<-sigChan
 		fmt.Println("\nReceived interrupt signal. Saving session...")
 		is.saveSession()
-		is.quit <- true
+		fmt.Println("Goodbye!")
+		os.Exit(0)
 	}()
 
 	fmt.Println("Welcome to PPLX Interactive Mode!")
@@ -69,19 +68,13 @@ func (is *InteractiveSession) Run() error {
 
 	// Main loop
 	for {
-		select {
-		case <-is.quit:
-			fmt.Println("Goodbye!")
-			return nil
-		default:
-			if err := is.processInput(); err != nil {
-				if err.Error() == "exit" {
-					is.saveSession()
-					fmt.Println("Goodbye!")
-					return nil
-				}
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		if err := is.processInput(); err != nil {
+			if err.Error() == "exit" {
+				is.saveSession()
+				fmt.Println("Goodbye!")
+				return nil
 			}
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		}
 	}
 }

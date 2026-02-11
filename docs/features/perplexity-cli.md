@@ -40,16 +40,18 @@ perplexity-cli/
 │   ├── run.go            # pplx run command
 │   └── session.go        # pplx session command group
 │       ├── list.go       # pplx session list
-│       └── search.go     # pplx session search
+│       ├── search.go     # pplx session search
+│       └── show.go       # pplx session show
 ├── pkg/
 │   ├── perplexity/
 │   │   ├── client.go     # API client
 │   │   ├── types.go      # Request/response structs
 │   │   └── citations.go  # Citation parsing
 │   ├── session/
-│   │   ├── manager.go    # Session CRUD
-│   │   ├── types.go      # Session JSON structures
-│   │   └── utils.go      # Helper functions
+│   │   ├── manager.go    # Session CRUD + LoadByShortID
+│   │   ├── types.go      # Session JSON structures + ShortID field
+│   │   ├── utils.go      # Helper functions + GenerateShortID
+│   │   └── display.go    # Conversation display utilities
 │   ├── config/
 │   │   └── config.go     # Configuration management
 │   └── ui/
@@ -151,6 +153,7 @@ Sessions are stored as JSON files in `~/.pplx/sessions/` with timestamp-based na
 ```json
 {
   "id": "20060102-150405.000",
+  "short_id": "a8x9k2",
   "created_at": "2006-01-02T15:04:05.000Z",
   "messages": [
     {
@@ -166,14 +169,27 @@ Sessions are stored as JSON files in `~/.pplx/sessions/` with timestamp-based na
 }
 ```
 
+**Short ID:**
+- `short_id` field contains Base62-encoded timestamp
+- Generated from `created_at` timestamp for consistency
+- Present in both Session and SessionInfo structures
+- Used for quick reference in list/search/show commands
+
 **Auto-Save:**
 - Session files created immediately on interactive mode start
 - Updated after each API exchange in interactive mode
 - Written to temp file then atomic rename to prevent corruption
+- New sessions include `short_id` field automatically
+
+**Backward Compatibility:**
+- Existing sessions without `short_id` are handled gracefully
+- Short ID is generated from `created_at` timestamp on first load
+- Session is automatically saved with new short ID (lazy migration)
+- No batch migration needed; transparent to user
 
 ### Session List
 
-Display recent sessions sorted by timestamp.
+Display recent sessions sorted by timestamp with short IDs.
 
 **Usage:**
 ```bash
@@ -184,38 +200,113 @@ pplx session -l 10
 
 **Output:**
 ```
-20060102-150405.000 - What is the capital of France?
-20060102-140030.123 - Explain quantum computing
-20060102-130015.456 - How does photosynthesis work?
+1. [a8x9k2] Jan 02, 2006 15:04:05
+   What is the capital of France?
+   (3 messages)
+
+2. [b7j8l1] Jan 02, 2006 14:00:30
+   Explain quantum computing
+   (5 messages)
+
+3. [c6i7k0] Jan 02, 2006 13:00:15
+   How does photosynthesis work?
+   (4 messages)
 ```
 
 **Features:**
 - Sort by filename (timestamp) descending
 - Default limit: 10 sessions
-- Displays timestamp and truncated initial query
+- Displays short Base62 ID in brackets for easy reference
+- Shows timestamp, truncated initial query, and message count
 - Uses `-n` flag for custom limit
+
+**Short ID Format:**
+- Base62-encoded Unix timestamp (milliseconds)
+- 6-7 alphanumeric characters (0-9a-zA-Z)
+- Collision-free due to monotonic timestamps
+- Easy to copy-paste without special characters
 
 ### Session Search
 
-Search through session files for specific terms.
+Search through session files for specific terms or short IDs.
 
 **Usage:**
 ```bash
 pplx session search "photosynthesis"
+# or search by short ID
+pplx session search a8x9k2
 ```
 
 **Output:**
 ```
-20060102-130015.456 - How does photosynthesis work?
-  User: How does photosynthesis work?
-  Assistant: Photosynthesis is the process by which plants convert light energy...
+[a8x9k2] Jan 02, 2006 15:04:05
+What is the capital of France?
+
+User: How does photosynthesis work?
+Assistant: Photosynthesis is the process by which plants convert light energy...
 ```
 
 **Features:**
 - Case-insensitive search through all session files
 - Searches both user and assistant message content
-- Returns matching filename with context
+- Matches against short IDs as well as message content
+- Returns matching short ID with context and timestamp
 - Uses grep for efficient file system search
+
+**ID Lookup:**
+- Short IDs are alphanumeric (6-7 chars): `a8x9k2`
+- Timestamp IDs have format: `20060102-150405.000`
+- Command tries short ID match first, then falls back to full timestamp ID
+
+### Session Show
+
+Display the full conversation of a specific session with formatted messages and citations.
+
+**Usage:**
+```bash
+pplx session show a8x9k2
+# or use full timestamp ID
+pplx session show 20060102-150405.000
+```
+
+**Output:**
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+You: What is the capital of France?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PPLX: Paris is the capital of France. [1]
+
+## References:
+[1] France - https://en.wikipedia.org/wiki/France
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+You: What about Germany?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PPLX: The capital of Germany is Berlin. [2]
+
+## References:
+[2] Germany - https://en.wikipedia.org/wiki/Germany
+```
+
+**Features:**
+- Accepts short Base62 ID or full timestamp ID
+- Displays entire conversation chronologically
+- Color-coded separators (blue for user, cyan for assistant)
+- Shows inline citations with reconstructed reference sections
+- Displays timestamps and message metadata
+- Handles not found errors gracefully
+
+**Display Format:**
+- Each message wrapped in separator lines for clarity
+- User messages labeled with "You:" (blue separator)
+- Assistant messages labeled with "PPLX:" (cyan separator)
+- Citations displayed inline in bracket format
+- Full reference section shown after each assistant response
+- Original message content preserved exactly as stored
+
+**ID Resolution:**
+- Tries short ID lookup first (LoadByShortID)
+- Falls back to full timestamp ID lookup if needed
+- Provides clear error if session not found
 
 ## Configuration
 
@@ -383,6 +474,53 @@ tempFile := filepath.Join(dir, filename+".tmp")
 os.Rename(tempFile, targetFile)
 ```
 
+### Short ID Generation
+
+**Base62 Encoding:**
+```go
+func GenerateShortID(t time.Time) string {
+    timestamp := t.UnixMilli()
+    chars := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    result := make([]byte, 7)
+    for i := 6; i >= 0; i-- {
+        result[i] = chars[timestamp%62]
+        timestamp /= 62
+    }
+    return string(result)
+}
+```
+
+**Properties:**
+- Encodes Unix timestamp in milliseconds to Base62
+- Uses 62-character alphabet: `0-9a-zA-Z`
+- Produces 6-7 character strings (7 for full millisecond precision)
+- Monotonic increasing (newer timestamps = lexicographically larger)
+- Guaranteed unique (timestamps never repeat)
+- No collision checking required
+
+**Example IDs:**
+- `a8x9k2` - January 2, 2006 15:04:05
+- `b7j8l1` - January 2, 2006 14:00:30
+- `c6i7k0` - January 2, 2006 13:00:15
+
+**Migration:**
+```go
+func (m *Manager) Load(id string) (*Session, error) {
+    session, err := m.loadSession(id)
+    if err != nil {
+        return nil, err
+    }
+    
+    // Lazy migration: generate short ID if missing
+    if session.ShortID == "" {
+        session.ShortID = GenerateShortID(session.CreatedAt)
+        m.Save(session)
+    }
+    
+    return session, nil
+}
+```
+
 ## Testing
 
 ### Unit Tests
@@ -397,7 +535,10 @@ os.Rename(tempFile, targetFile)
 - File creation and deletion
 - JSON serialization/deserialization
 - Timestamp generation
+- Short ID generation and uniqueness
+- LoadByShortID functionality
 - Search functionality
+- Show command formatting
 
 **Configuration:**
 - Environment variable parsing
@@ -417,9 +558,16 @@ os.Rename(tempFile, targetFile)
 - Auto-save functionality
 
 **Session Commands:**
-- List sorting and limiting
-- Search accuracy
-- Context display
+- List sorting and limiting with short ID display
+- Search accuracy with short ID matching
+- Show command formatting with citations
+- Backward compatibility with old sessions
+
+**Short ID Generation:**
+- Base62 encoding correctness
+- Timestamp uniqueness guarantees
+- Monotonic ordering verification
+- ID collision scenarios (should not occur)
 
 ## Dependencies
 

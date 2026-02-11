@@ -174,6 +174,8 @@ func TestManagerSearch(t *testing.T) {
 	session1.AddMessage("user", "Tell me about France")
 	manager.Save(session1)
 
+	time.Sleep(10 * time.Millisecond)
+
 	session2 := NewSession("sonar", "What is London?")
 	session2.AddMessage("user", "Tell me about England")
 	manager.Save(session2)
@@ -264,5 +266,181 @@ func TestParseSessionID(t *testing.T) {
 		if result != tt.expected {
 			t.Errorf("ParseSessionID(%q) = %q, expected %q", tt.filename, result, tt.expected)
 		}
+	}
+}
+
+func TestEncodeBase62(t *testing.T) {
+	tests := []struct {
+		input    int64
+		expected string
+	}{
+		{0, "0"},
+		{1, "1"},
+		{61, "Z"},
+		{62, "10"},
+		{1234567890, "1ly7vk"},
+	}
+
+	for _, tt := range tests {
+		result := encodeBase62(tt.input)
+		if result != tt.expected {
+			t.Errorf("encodeBase62(%d) = %s, expected %s", tt.input, result, tt.expected)
+		}
+	}
+}
+
+func TestGenerateShortID(t *testing.T) {
+	// Test that it generates non-empty string
+	t1 := time.Now()
+	id1 := GenerateShortID(t1)
+
+	if id1 == "" {
+		t.Error("GenerateShortID returned empty string")
+	}
+
+	// Test uniqueness (different times should give different IDs)
+	time.Sleep(time.Millisecond)
+	t2 := time.Now()
+	id2 := GenerateShortID(t2)
+
+	if id1 == id2 {
+		t.Error("GenerateShortID should produce unique IDs for different times")
+	}
+}
+
+func TestNewSessionHasShortID(t *testing.T) {
+	session := NewSession("sonar", "Test query")
+
+	if session.ShortID == "" {
+		t.Error("NewSession() should create session with ShortID")
+	}
+
+	// Verify ShortID is valid base62 (only alphanumeric characters)
+	for _, char := range session.ShortID {
+		if !((char >= '0' && char <= '9') || (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z')) {
+			t.Errorf("ShortID contains invalid character: %c", char)
+		}
+	}
+}
+
+func TestToInfoIncludesShortID(t *testing.T) {
+	session := NewSession("sonar", "Test query")
+	info := session.ToInfo()
+
+	if info.ShortID != session.ShortID {
+		t.Errorf("ToInfo() ShortID = %s, expected %s", info.ShortID, session.ShortID)
+	}
+}
+
+func TestManagerLoadByShortID(t *testing.T) {
+	// Create temp directory
+	tempDir, err := os.MkdirTemp("", "session-test-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	manager := NewManagerWithDir(tempDir)
+
+	// Create a session
+	session := NewSession("sonar", "Test query")
+	session.AddMessage("user", "Hello")
+	session.AddMessage("assistant", "Hi there")
+
+	err = manager.Save(session)
+	if err != nil {
+		t.Fatalf("Failed to save session: %v", err)
+	}
+
+	// Load by short ID
+	loaded, err := manager.LoadByShortID(session.ShortID)
+	if err != nil {
+		t.Fatalf("LoadByShortID failed: %v", err)
+	}
+
+	if loaded.ID != session.ID {
+		t.Errorf("Loaded wrong session: got %s, want %s", loaded.ID, session.ID)
+	}
+
+	// Test not found
+	_, err = manager.LoadByShortID("nonexistent")
+	if err == nil {
+		t.Error("LoadByShortID should return error for non-existent ID")
+	}
+}
+
+func TestManagerSearchByShortID(t *testing.T) {
+	// Create temp directory
+	tempDir, err := os.MkdirTemp("", "session-test-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	manager := NewManagerWithDir(tempDir)
+
+	// Create sessions
+	s1 := NewSession("sonar", "Query one")
+	s2 := NewSession("sonar", "Query two")
+	s3 := NewSession("sonar", "Query three")
+	time.Sleep(time.Millisecond)
+	manager.Save(s1)
+	time.Sleep(time.Millisecond)
+	manager.Save(s2)
+	time.Sleep(time.Millisecond)
+	manager.Save(s3)
+
+	// Search by short ID (exact match)
+	results, err := manager.Search(s2.ShortID)
+	if err != nil {
+		t.Fatalf("Search failed: %v", err)
+	}
+
+	if len(results) != 1 {
+		t.Errorf("Expected 1 result, got %d", len(results))
+	}
+
+	if len(results) > 0 && results[0].ID != s2.ID {
+		t.Errorf("Wrong session found: got %s, want %s", results[0].ID, s2.ID)
+	}
+}
+
+func TestManagerBackwardCompatibility(t *testing.T) {
+	// Create temp directory
+	tempDir, err := os.MkdirTemp("", "session-test-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	manager := NewManagerWithDir(tempDir)
+
+	// Create a session without ShortID (simulating old session)
+	session := NewSession("sonar", "Old session")
+	session.ShortID = "" // Simulate old session
+
+	err = manager.Save(session)
+	if err != nil {
+		t.Fatalf("Failed to save session: %v", err)
+	}
+
+	// Load the session - it should get a ShortID assigned
+	loaded, err := manager.Load(session.ID)
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+
+	if loaded.ShortID == "" {
+		t.Error("Old session should have gotten a ShortID after loading")
+	}
+
+	// Reload to verify it was saved
+	reloaded, err := manager.Load(session.ID)
+	if err != nil {
+		t.Fatalf("Reload failed: %v", err)
+	}
+
+	if reloaded.ShortID != loaded.ShortID {
+		t.Error("ShortID should persist after saving")
 	}
 }

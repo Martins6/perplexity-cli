@@ -10,7 +10,7 @@ Key capabilities include:
 - One-shot queries via `pplx run` command (without session persistence)
 - Interactive conversation mode with REPL interface (with colored separators)
 - Session persistence in `~/.pplx/sessions/` with JSON-based storage (interactive mode only)
-- Session search and listing functionality
+- Session listing, search, and show functionality with short Base62 IDs
 - Citation parsing and formatted reference display
 - Optional configuration file support (works with environment variables only)
 - Cross-platform build system with Taskfile and Makefile support

@@ -77,3 +77,33 @@ func Debugf(format string, args ...interface{}) {
 		fmt.Fprintf(os.Stderr, "[DEBUG] "+format+"\n", args...)
 	}
 }
+
+// base62Chars is the character set used for Base62 encoding
+const base62Chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+// encodeBase62 encodes an int64 as a Base62 string
+func encodeBase62(n int64) string {
+	if n == 0 {
+		return string(base62Chars[0])
+	}
+
+	var result []byte
+	base := int64(len(base62Chars))
+	for n > 0 {
+		result = append(result, base62Chars[n%base])
+		n /= base
+	}
+
+	// Reverse the result
+	for i, j := 0, len(result)-1; i < j; i, j = i+1, j-1 {
+		result[i], result[j] = result[j], result[i]
+	}
+
+	return string(result)
+}
+
+// GenerateShortID generates a short, unique session ID using Base62-encoded Unix timestamp
+// The ID is based on Unix timestamp in milliseconds, ensuring uniqueness and monotonic ordering
+func GenerateShortID(t time.Time) string {
+	return encodeBase62(t.UnixMilli())
+}

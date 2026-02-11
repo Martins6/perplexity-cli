@@ -66,6 +66,37 @@ func (m *Manager) Load(id string) (*Session, error) {
 	return m.LoadFromFile(filename)
 }
 
+// LoadByShortID loads a session by its short ID
+func (m *Manager) LoadByShortID(shortID string) (*Session, error) {
+	entries, err := os.ReadDir(m.sessionsDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read sessions directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		filename := entry.Name()
+		if !IsValidSessionFile(filename) {
+			continue
+		}
+
+		filepath := filepath.Join(m.sessionsDir, filename)
+		session, err := m.LoadFromFile(filepath)
+		if err != nil {
+			continue
+		}
+
+		if session.ShortID == shortID {
+			return session, nil
+		}
+	}
+
+	return nil, fmt.Errorf("session with short ID %s not found", shortID)
+}
+
 // LoadFromFile loads a session from a specific file path
 func (m *Manager) LoadFromFile(filename string) (*Session, error) {
 	data, err := os.ReadFile(filename)
@@ -76,6 +107,20 @@ func (m *Manager) LoadFromFile(filename string) (*Session, error) {
 	var session Session
 	if err := json.Unmarshal(data, &session); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal session: %w", err)
+	}
+
+	// Handle old sessions without ShortID
+	if session.ShortID == "" {
+		// Generate ShortID from the session's creation time
+		session.ShortID = GenerateShortID(session.Metadata.CreatedAt)
+
+		// Save the session with the new ShortID
+		if err := m.Save(&session); err != nil {
+			// Log warning but continue - session will work without saving
+			Debugf("Failed to save migrated session %s: %v", session.ID, err)
+		} else {
+			Debugf("Migrated session %s with ShortID %s", session.ID, session.ShortID)
+		}
 	}
 
 	return &session, nil
@@ -156,12 +201,19 @@ func (m *Manager) Search(query string) ([]SessionInfo, error) {
 			continue
 		}
 
-		// Search in initial query and all messages
 		found := false
-		if strings.Contains(strings.ToLower(session.Metadata.InitialQuery), queryLower) {
+
+		// Search by short ID (exact match, case-insensitive)
+		if strings.EqualFold(session.ShortID, query) {
 			found = true
 		}
 
+		// Search in initial query
+		if !found && strings.Contains(strings.ToLower(session.Metadata.InitialQuery), queryLower) {
+			found = true
+		}
+
+		// Search in all messages
 		if !found {
 			for _, msg := range session.Messages {
 				if strings.Contains(strings.ToLower(msg.Content), queryLower) {

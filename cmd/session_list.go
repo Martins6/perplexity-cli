@@ -47,8 +47,8 @@ Examples:
 		fmt.Printf("Recent sessions (showing %d of %d total):\n\n", len(sessions), len(sessions))
 
 		for i, info := range sessions {
-			// Format: 1. Jan 02, 2006 15:04:05 - Query preview
-			fmt.Printf("%d. %s\n", i+1, session.FormatSessionTime(info.CreatedAt))
+			// Format: 1. [shortid] Jan 02, 2006 15:04:05
+			fmt.Printf("%d. [%s] %s\n", i+1, info.ShortID, session.FormatSessionTime(info.CreatedAt))
 			fmt.Printf("   %s\n", session.TruncateQuery(info.InitialQuery, 60))
 			fmt.Printf("   (%d messages)\n", info.MessageCount)
 

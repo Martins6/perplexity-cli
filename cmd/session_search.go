@@ -14,13 +14,15 @@ var sessionSearchCmd = &cobra.Command{
 	Long: `Search through your saved conversation sessions for specific content.
 
 The search is case-insensitive and matches against:
+- Short ID (exact match)
 - Initial query
 - All conversation messages
 
 Examples:
   pplx session search "France"
   pplx session search "quantum computing"
-  pplx session search "capital of"`,
+  pplx session search "capital of"
+  pplx session search "a8x9k2"`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		query := args[0]
@@ -49,8 +51,7 @@ Examples:
 		fmt.Printf("Found %d session(s) matching '%s':\n\n", len(results), query)
 
 		for i, info := range results {
-			fmt.Printf("%d. %s\n", i+1, session.FormatSessionTime(info.CreatedAt))
-			fmt.Printf("   ID: %s\n", info.ID)
+			fmt.Printf("%d. [%s] %s\n", i+1, info.ShortID, session.FormatSessionTime(info.CreatedAt))
 			fmt.Printf("   Query: %s\n", session.TruncateQuery(info.InitialQuery, 60))
 			fmt.Printf("   Messages: %d\n", info.MessageCount)
 			fmt.Println()
