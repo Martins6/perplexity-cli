@@ -53,8 +53,7 @@ perplexity-cli/
 │   ├── config/
 │   │   └── config.go     # Configuration management
 │   └── ui/
-│       ├── colors.go     # Terminal color formatting
-│       └── spinner.go    # Loading indicators
+│       └── colors.go     # Terminal color formatting
 ├── main.go               # Entry point
 ├── Taskfile.yaml         # Task-based build system
 ├── Makefile              # Traditional build system
@@ -86,6 +85,8 @@ PPLX: Paris is the capital of France. [1]
 - Displays content with inline citations in bracket format `[1]`, `[2]`
 - Appends formatted references section at the end
 - Single API call with no session persistence
+- Sessions are NOT saved for one-shot queries (unlike interactive mode)
+- No session files are created in `~/.pplx/sessions/`
 
 ### Interactive Mode
 
@@ -111,20 +112,32 @@ pplx
 
 **Output Format:**
 ```
+Welcome to PPLX Interactive Mode!
+Model: sonar | Type '/q' or press Ctrl+C to exit
+
 You: What is the capital of France?
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PPLX: Paris is the capital of France. [1]
 
 ## References:
 [1] France - https://en.wikipedia.org/wiki/France
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 You: What about Germany?
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 PPLX: The capital of Germany is Berlin. [2]
 
 ## References:
 [2] Germany - https://en.wikipedia.org/wiki/Germany
 ```
+
+**Visual Enhancements:**
+- Colored separator lines appear between consecutive messages
+- Different colors for YOU (blue) vs PPLX (cyan) separators
+- No separator before the first "You:" prompt
+- Improves readability and visual distinction in conversation flow
 
 ### Session Management
 
@@ -220,6 +233,8 @@ pplx session search "photosynthesis"
 
 Location: `~/.pplx/config.yaml`
 
+**Note:** The configuration file is optional. The CLI will work correctly using only the `PPLX_API_KEY` environment variable. If the config file does not exist, it will not cause an error.
+
 **Options:**
 ```yaml
 default_model: sonar
@@ -230,7 +245,7 @@ temperature: 0.7
 **Priority:**
 1. Command-line flags (highest)
 2. Environment variables
-3. Configuration file
+3. Configuration file (optional)
 4. Default values (lowest)
 
 ## API Integration
@@ -427,8 +442,8 @@ task install
 
 **Using Makefile:**
 ```bash
-make build
-make install
+task build
+task install
 ```
 
 **Binary Name:** `pplx`
@@ -443,28 +458,28 @@ make install
 ```bash
 task test
 # or
-make test
+task test
 ```
 
 **Format Code:**
 ```bash
 task fmt
 # or
-make fmt
+task fmt
 ```
 
 **Run Linter:**
 ```bash
 task lint
 # or
-make lint
+task lint
 ```
 
 **Build and Run:**
 ```bash
 task run
 # or
-make run
+task run
 ```
 
 ## Future Enhancements

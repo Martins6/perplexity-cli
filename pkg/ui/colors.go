@@ -1,7 +1,9 @@
 package ui
 
 import (
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/fatih/color"
 )
@@ -64,4 +66,9 @@ func PrintWarning(format string, args ...interface{}) {
 // PrintPrompt prints a prompt in cyan
 func PrintPrompt(text string) string {
 	return PromptColor(text)
+}
+
+// PrintSeparator prints a colored separator line
+func PrintSeparator(colorFunc func(...interface{}) string) {
+	fmt.Println(colorFunc(strings.Repeat("─", 60)))
 }

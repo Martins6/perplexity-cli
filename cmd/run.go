@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 	"perplexity-cli/pkg/config"
 	"perplexity-cli/pkg/perplexity"
-	"perplexity-cli/pkg/ui"
 )
 
 var runCmd = &cobra.Command{
@@ -76,7 +75,7 @@ Examples:
 			{Role: "user", Content: query},
 		}
 
-		// Make API request with spinner
+		// Make API request
 		req := &perplexity.ChatCompletionRequest{
 			Model:           model,
 			Messages:        messages,
@@ -87,12 +86,7 @@ Examples:
 			ReasoningEffort: cfg.ReasoningEffort,
 		}
 
-		// Show progress spinner
-		spinner := ui.NewSpinner("Thinking...")
-		spinner.Start()
-
 		resp, err := client.CreateCompletionWithRequest(req)
-		spinner.Stop()
 
 		if err != nil {
 			return fmt.Errorf("API request failed: %w", err)

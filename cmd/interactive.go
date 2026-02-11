@@ -11,6 +11,7 @@ import (
 	"perplexity-cli/pkg/config"
 	"perplexity-cli/pkg/perplexity"
 	"perplexity-cli/pkg/session"
+	"perplexity-cli/pkg/ui"
 )
 
 const (
@@ -27,6 +28,7 @@ type InteractiveSession struct {
 	config         *config.Config
 	reader         *bufio.Reader
 	quit           chan bool
+	firstMessage   bool
 }
 
 // NewInteractiveSession creates a new interactive session
@@ -45,6 +47,7 @@ func NewInteractiveSession(cfg *config.Config) (*InteractiveSession, error) {
 		config:         cfg,
 		reader:         bufio.NewReader(os.Stdin),
 		quit:           make(chan bool),
+		firstMessage:   true,
 	}, nil
 }
 
@@ -85,6 +88,11 @@ func (is *InteractiveSession) Run() error {
 
 // processInput processes a single user input
 func (is *InteractiveSession) processInput() error {
+	// Display separator for consecutive messages
+	if !is.firstMessage {
+		ui.PrintSeparator(ui.Cyan)
+	}
+
 	// Display prompt
 	fmt.Print("You: ")
 
@@ -143,10 +151,14 @@ func (is *InteractiveSession) processInput() error {
 
 	// Display response
 	fmt.Println()
+	ui.PrintSeparator(ui.Magenta)
 	fmt.Print("PPLX: ")
 	formatted := perplexity.FormatWithReferences(parsed)
 	fmt.Println(formatted)
 	fmt.Println()
+
+	// Mark first message as complete
+	is.firstMessage = false
 
 	// Auto-save session
 	if err := is.saveSession(); err != nil {

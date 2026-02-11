@@ -8,12 +8,12 @@ Go CLI application for interacting with the Perplexity Sonar API. Uses Cobra for
 
 ```bash
 # Build binary
-make build
+task build
 # or
 task build
 
 # Run all tests
-make test
+task test
 # or
 task test
 # or
@@ -24,27 +24,27 @@ go test -run TestName ./pkg/perplexity
 go test -run TestFunctionName ./pkg/session
 
 # Run tests with coverage
-make test-coverage
+task test-coverage
 task test-coverage
 
 # Format code
-make fmt
+task fmt
 task fmt
 
 # Run linter (requires golangci-lint)
-make lint
+task lint
 task lint
 
 # Clean build artifacts
-make clean
+task clean
 task clean
 
 # Install binary locally
-make install
+task install
 task install
 
 # Build and run
-make run
+task run
 task run
 ```
 

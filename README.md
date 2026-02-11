@@ -32,9 +32,9 @@ This will build the binary and install it to `$GOPATH/bin` (if set) or `/usr/loc
 ### Manual Install
 
 ```bash
-make install
+task install
 # or
-make build && cp build/pplx $GOPATH/bin/
+task build && cp build/pplx $GOPATH/bin/
 ```
 
 ### Build from Source
@@ -44,7 +44,7 @@ make build && cp build/pplx $GOPATH/bin/
 task build
 
 # Using Make
-make build
+task build
 
 # Manual
 go build -o build/pplx main.go
