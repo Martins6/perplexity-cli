@@ -52,7 +52,7 @@ func Load() (*Config, error) {
 
 	// Ensure config directory exists
 	if err := os.MkdirAll(configDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create config directory: %w", err)
+		fmt.Fprintf(os.Stderr, "Warning: failed to create config directory: %v\n", err)
 	}
 
 	// Set config file
@@ -69,9 +69,8 @@ func Load() (*Config, error) {
 	viper.SetDefault("reasoning_effort", cfg.ReasoningEffort)
 
 	// Read config file if it exists
-	if err := viper.ReadInConfig(); err != nil {
-		// It's okay if the config file doesn't exist
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+	if _, err := os.Stat(configFile); err == nil {
+		if err := viper.ReadInConfig(); err != nil {
 			return nil, fmt.Errorf("failed to read config file: %w", err)
 		}
 	}
@@ -121,7 +120,7 @@ func LoadWithFile(configFile string) (*Config, error) {
 // Validate checks if the configuration is valid
 func (c *Config) Validate() error {
 	if c.APIKey == "" {
-		return fmt.Errorf("API key is required. Set PPLX_API_KEY environment variable or add api_key to ~/.pplx/config.yaml")
+		return fmt.Errorf("API key is required. Set PPLX_API_KEY environment variable or add api_key to ~/.pplx/config.yaml (config file is optional)")
 	}
 
 	// Validate model

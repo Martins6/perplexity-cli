@@ -69,10 +69,6 @@ func initConfig() {
 
 	viper.SetEnvPrefix("PPLX")
 	viper.AutomaticEnv()
-
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
-	}
 }
 
 // runInteractive is defined in interactive.go
