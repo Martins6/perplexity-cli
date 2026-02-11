@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 	"perplexity-cli/pkg/config"
 	"perplexity-cli/pkg/perplexity"
-	"perplexity-cli/pkg/session"
 	"perplexity-cli/pkg/ui"
 )
 
@@ -72,22 +71,10 @@ Examples:
 		clientConfig.Model = model
 		client := perplexity.NewClientWithConfig(clientConfig)
 
-		// Create session manager
-		sessionManager, err := session.NewManager()
-		if err != nil {
-			return fmt.Errorf("failed to create session manager: %w", err)
-		}
-
-		// Create a new session
-		sess := session.NewSession(model, query)
-
 		// Prepare messages
 		messages := []perplexity.Message{
 			{Role: "user", Content: query},
 		}
-
-		// Add user message to session
-		sess.AddMessage("user", query)
 
 		// Make API request with spinner
 		req := &perplexity.ChatCompletionRequest{
@@ -114,20 +101,9 @@ Examples:
 		// Parse response
 		parsed := perplexity.ParseResponse(resp)
 
-		// Add assistant response to session (without references section for API context)
-		cleanContent := perplexity.StripReferences(parsed.Content)
-		sess.AddMessage("assistant", cleanContent)
-
 		// Display formatted response with references
 		formatted := perplexity.FormatWithReferences(parsed)
 		fmt.Println(formatted)
-
-		// Save session
-		if err := sessionManager.Save(sess); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to save session: %v\n", err)
-		} else {
-			session.Debugf("Session saved: %s", sess.ID)
-		}
 
 		return nil
 	},
