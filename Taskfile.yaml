@@ -1,0 +1,95 @@
+version: '3'
+
+vars:
+  BUILD_DIR: build
+  BINARY_NAME: pplx
+  MAIN_FILE: main.go
+
+tasks:
+  default:
+    desc: Build the pplx binary
+    cmds:
+      - task build
+
+  build:
+    desc: Build binary for current platform
+    dir: .
+    cmds:
+      - mkdir -p {{.BUILD_DIR}}
+      - go build -o {{.BUILD_DIR}}/{{.BINARY_NAME}} {{.MAIN_FILE}}
+    sources:
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+    generates:
+      - "{{.BUILD_DIR}}/{{.BINARY_NAME}}"
+
+  install:
+    desc: Install binary to $GOPATH/bin or /usr/local/bin (always cleans first)
+    cmds:
+      - task clean
+      - task build
+      - |
+        if [ -n "$GOPATH" ] && [ -d "$GOPATH/bin" ]; then
+          install -m 0755 {{.BUILD_DIR}}/{{.BINARY_NAME}} $GOPATH/bin/{{.BINARY_NAME}}
+          echo "Installed to $GOPATH/bin/{{.BINARY_NAME}}"
+        else
+          install -m 0755 {{.BUILD_DIR}}/{{.BINARY_NAME}} /usr/local/bin/{{.BINARY_NAME}}
+          echo "Installed to /usr/local/bin/{{.BINARY_NAME}}"
+        fi
+        echo "Installation complete!"
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -rf {{.BUILD_DIR}}/
+      - rm -f coverage.out coverage.html
+      - go clean
+
+  test:
+    desc: Run all tests
+    cmds:
+      - go test ./... -v
+
+  test-coverage:
+    desc: Run tests with coverage report
+    cmds:
+      - go test ./... -cover -coverprofile=coverage.out
+      - go tool cover -html=coverage.out -o coverage.html
+
+  fmt:
+    desc: Format Go code
+    cmds:
+      - go fmt ./...
+
+  lint:
+    desc: Run linter (requires golangci-lint)
+    cmds:
+      - |
+        which golangci-lint > /dev/null || (echo "golangci-lint not installed. Install with: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest" && exit 1)
+      - golangci-lint run ./...
+
+  deps:
+    desc: Download and tidy dependencies
+    cmds:
+      - go mod download
+      - go mod tidy
+
+  run:
+    desc: Build and run the application
+    cmds:
+      - task build
+      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}}
+
+  verify:
+    desc: Build and run tests (CI verification)
+    cmds:
+      - task build
+      - task test
+
+  all:
+    desc: Run clean, build, and test
+    cmds:
+      - task clean
+      - task build
+      - task test
