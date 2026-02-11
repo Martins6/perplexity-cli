@@ -5,9 +5,10 @@ A command-line interface for interacting with the Perplexity Sonar API.
 ## Features
 
 - One-shot queries - Send a single query and get a response
-- Interactive mode - Have a conversation with Perplexity
+- Interactive mode - Have a conversation with Perplexity with beautiful markdown rendering
 - Session management - Save and search conversation history
 - Citation handling - Automatic formatting of citations and references
+- Markdown rendering - Rich formatting with syntax highlighting in interactive mode
 
 ## Installation
 
@@ -103,12 +104,59 @@ top_p: 0.9
 search_context_size: medium
 search_mode: true
 reasoning_effort: low
+
+# Markdown rendering (interactive mode only)
+use_glow: true         # Enable/disable markdown rendering
+glow_style: auto       # Style: auto, dark, light, or custom JSON path
+glow_width: 0          # Word wrap width (0 = terminal width)
 ```
 
 Set your Perplexity API key:
 ```bash
 export PPLX_API_KEY=your-api-key-here
 ```
+
+## Markdown Rendering
+
+The interactive mode supports beautiful markdown rendering with syntax highlighting using the Charmbracelet Glamour library.
+
+### Features
+- **Syntax highlighting** - Code blocks are automatically highlighted
+- **Rich formatting** - Headers, lists, quotes, and tables are properly rendered
+- **Multiple themes** - Choose from dark, light, or auto (detects terminal background)
+- **Customizable** - Adjust word wrap width or use custom JSON stylesheets
+- **Graceful fallback** - Automatically uses plain text if not a terminal
+
+### Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `use_glow` | bool | true | Enable/disable markdown rendering in interactive mode |
+| `glow_style` | string | auto | Style theme: auto, dark, light, or custom JSON path |
+| `glow_width` | int | 0 | Word wrap width (0 = use terminal width) |
+
+### Examples
+
+Enable markdown rendering with dark theme:
+```yaml
+use_glow: true
+glow_style: dark
+glow_width: 0
+```
+
+Disable markdown rendering (plain text only):
+```yaml
+use_glow: false
+```
+
+Use a custom word wrap width:
+```yaml
+use_glow: true
+glow_style: auto
+glow_width: 80
+```
+
+**Note:** Markdown rendering is only available in interactive mode. One-shot queries (`pplx run`) always display plain text output.
 
 ## Development
 

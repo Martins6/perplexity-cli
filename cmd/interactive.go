@@ -147,7 +147,12 @@ func (is *InteractiveSession) processInput() error {
 	ui.PrintSeparator(ui.Magenta)
 	fmt.Print("PPLX: ")
 	formatted := perplexity.FormatWithReferences(parsed)
-	fmt.Println(formatted)
+	rendered, err := ui.RenderMarkdown(formatted, is.config)
+	if err != nil {
+		fmt.Println(formatted)
+	} else {
+		fmt.Println(rendered)
+	}
 	fmt.Println()
 
 	// Mark first message as complete

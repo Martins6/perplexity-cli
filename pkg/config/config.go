@@ -18,6 +18,9 @@ type Config struct {
 	SearchContextSize string  `mapstructure:"search_context_size"`
 	SearchMode        string  `mapstructure:"search_mode"`
 	ReasoningEffort   string  `mapstructure:"reasoning_effort"`
+	UseGlow           bool    `mapstructure:"use_glow"`
+	GlowStyle         string  `mapstructure:"glow_style"`
+	GlowWidth         int     `mapstructure:"glow_width"`
 }
 
 // DefaultConfig returns the default configuration
@@ -30,6 +33,9 @@ func DefaultConfig() *Config {
 		SearchContextSize: "low",
 		SearchMode:        "web",
 		ReasoningEffort:   "medium",
+		UseGlow:           true,
+		GlowStyle:         "auto",
+		GlowWidth:         0, // 0 means use terminal width
 	}
 }
 
@@ -67,6 +73,9 @@ func Load() (*Config, error) {
 	viper.SetDefault("search_context_size", cfg.SearchContextSize)
 	viper.SetDefault("search_mode", cfg.SearchMode)
 	viper.SetDefault("reasoning_effort", cfg.ReasoningEffort)
+	viper.SetDefault("use_glow", cfg.UseGlow)
+	viper.SetDefault("glow_style", cfg.GlowStyle)
+	viper.SetDefault("glow_width", cfg.GlowWidth)
 
 	// Read config file if it exists
 	if _, err := os.Stat(configFile); err == nil {
@@ -164,6 +173,9 @@ func (c *Config) Save() error {
 	viper.Set("search_context_size", c.SearchContextSize)
 	viper.Set("search_mode", c.SearchMode)
 	viper.Set("reasoning_effort", c.ReasoningEffort)
+	viper.Set("use_glow", c.UseGlow)
+	viper.Set("glow_style", c.GlowStyle)
+	viper.Set("glow_width", c.GlowWidth)
 
 	configFile := filepath.Join(configDir, "config.yaml")
 	if err := viper.WriteConfigAs(configFile); err != nil {

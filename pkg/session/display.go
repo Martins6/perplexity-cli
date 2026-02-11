@@ -3,12 +3,18 @@ package session
 import (
 	"fmt"
 
+	"perplexity-cli/pkg/config"
 	"perplexity-cli/pkg/perplexity"
 	"perplexity-cli/pkg/ui"
 )
 
 // DisplaySession displays a full session conversation with formatting
 func DisplaySession(s *Session) error {
+	cfg, err := config.Load()
+	if err != nil {
+		cfg = config.DefaultConfig()
+	}
+
 	// Display header with metadata
 	fmt.Println()
 	ui.PrintSeparator(ui.HeaderColor)
@@ -34,7 +40,12 @@ func DisplaySession(s *Session) error {
 
 			// Check if content has citations and format accordingly
 			formatted := formatMessageWithCitations(msg.Content)
-			fmt.Println(formatted)
+			rendered, err := ui.RenderMarkdown(formatted, cfg)
+			if err != nil {
+				fmt.Println(formatted)
+			} else {
+				fmt.Println(rendered)
+			}
 			fmt.Println()
 		}
 	}

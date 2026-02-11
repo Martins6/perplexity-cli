@@ -22,3 +22,5 @@ The following documentation files describe specific features of the system:
 - `taskfile-build-system.md` - Documents the Taskfile.yaml implementation, a modern alternative to the traditional Makefile that provides improved cross-platform support, incremental builds, and task dependencies for building, installing, testing, and developing the CLI application.
 
 - `perplexity-cli.md` - Comprehensive documentation of the core Perplexity CLI implementation, including the API client architecture, session management system, interactive REPL interface with colored separators, citation parsing, optional configuration file handling, and all available commands for querying, searching, and managing conversations.
+
+- `glamour-markdown-rendering.md` - Describes the Glamour markdown rendering feature that provides beautiful, styled markdown output in interactive mode with syntax highlighting, proper formatting, and theme support using the Charmbracelet Glamour library. Includes configuration options for enabling/disabling rendering, selecting themes (auto, dark, light), and customizing word wrap width.
