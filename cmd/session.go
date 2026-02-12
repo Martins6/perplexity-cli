@@ -21,7 +21,14 @@ Examples:
   pplx session search "France"
 
   # List all sessions
-  pplx session list`,
+  pplx session list
+
+Shortcuts for faster access:
+  pplx -c a8x9k2        (same as: pplx session continue a8x9k2)
+  pplx -l 20            (same as: pplx session list -l 20)
+  pplx -s "France"      (same as: pplx session search "France")
+
+These shortcuts work at the root level for quick access to session commands.`,
 }
 
 func init() {

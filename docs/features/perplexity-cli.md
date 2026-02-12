@@ -308,6 +308,61 @@ PPLX: The capital of Germany is Berlin. [2]
 - Falls back to full timestamp ID lookup if needed
 - Provides clear error if session not found
 
+### Session Command Shortcuts
+
+For faster access to common session commands, use these root-level flags:
+
+**Available Shortcuts:**
+- `-c [id]` - Continue a session (same as: `pplx session continue [id]`)
+- `-l [limit]` - List recent sessions (same as: `pplx session list -l [limit]`)
+- `-s [query]` - Search sessions (same as: `pplx session search [query]`)
+
+**Examples:**
+
+**Continue a session:**
+```bash
+# Full command
+pplx session continue a8x9k2
+
+# Shortcut
+pplx -c a8x9k2
+```
+
+**List recent sessions:**
+```bash
+# Full command
+pplx session list -l 20
+
+# Shortcut
+pplx -l 20
+```
+
+**Search sessions:**
+```bash
+# Full command
+pplx session search "France"
+
+# Shortcut
+pplx -s "France"
+```
+
+**Conflict Behavior:**
+Shortcuts cannot be combined with explicit session commands. If you try to use both together, you'll receive an error:
+
+```bash
+$ pplx session -c a8x9k2
+Error: cannot use session shortcuts (-c, -l, -s) together with explicit session commands
+
+Please use either:
+  - pplx -c [id] (shortcut)
+  - pplx session continue [id] (explicit command)
+```
+
+**Limitations:**
+- Shortcuts only work at the root level (e.g., `pplx -c` works, `pplx session -c` does not)
+- Only one shortcut can be used at a time
+- All other flags work normally with shortcuts (e.g., `pplx -c a8x9k2 --model sonar-pro`)
+
 ## Configuration
 
 ### Environment Variables

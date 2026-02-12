@@ -88,6 +88,23 @@ pplx session -l 10
 pplx session search "France"
 ```
 
+### Shortcuts
+
+For faster access to session commands, you can use these shortcuts:
+
+```bash
+# Continue a session
+pplx -c a8x9k2
+
+# List recent sessions (limit 20)
+pplx -l 20
+
+# Search sessions for 'France'
+pplx -s 'France'
+```
+
+**Note:** Shortcuts only work at the root level and cannot be combined with explicit session commands (e.g., `pplx session -c` is not allowed).
+
 ## Configuration
 
 Configuration can be provided via:
