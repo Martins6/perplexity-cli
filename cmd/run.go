@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"perplexity-cli/pkg/config"
 	"perplexity-cli/pkg/perplexity"
+	"perplexity-cli/pkg/ui"
 )
 
 var runCmd = &cobra.Command{
@@ -97,7 +98,8 @@ Examples:
 
 		// Display formatted response with references
 		formatted := perplexity.FormatWithReferences(parsed)
-		fmt.Println(formatted)
+		rendered := ui.RenderMarkdownAlways(formatted, cfg)
+		fmt.Println(rendered)
 
 		return nil
 	},

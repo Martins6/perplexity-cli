@@ -6,14 +6,15 @@ The Glamour Markdown Rendering feature provides beautiful, styled markdown outpu
 
 ## Motivation
 
-Prior to this feature, the interactive `pplx` command displayed markdown responses from the Perplexity Sonar API as plain text with minimal formatting. This made it difficult to read and appreciate the rich markdown content, including headers, code blocks, lists, and other markdown elements that Perplexity often returns.
+Prior to this feature, the interactive `pplx` command and one-shot `pplx run` command displayed markdown responses from the Perplexity Sonar API as plain text with minimal formatting. This made it difficult to read and appreciate the rich markdown content, including headers, code blocks, lists, and other markdown elements that Perplexity often returns.
 
 ## Implementation Details
 
 ### Core Components
 
 1. **Markdown Rendering Utility** (`pkg/ui/markdown.go`)
-   - `RenderMarkdown(content string, cfg *config.Config) (string, error)` - Main rendering function
+   - `RenderMarkdown(content string, cfg *config.Config) (string, error)` - Main rendering function for interactive mode
+   - `RenderMarkdownAlways(content string, cfg *config.Config) string` - Always-on rendering for one-shot queries
    - Creates Glamour TermRenderer with configurable options
    - Graceful fallback to plain text when disabled or not a terminal
 
@@ -24,6 +25,7 @@ Prior to this feature, the interactive `pplx` command displayed markdown respons
 
 3. **Integration Points**
    - Interactive mode (`cmd/interactive.go`) - Renders assistant responses
+   - One-shot queries (`cmd/run.go`) - Renders response content and citations with markdown
    - Session display (`pkg/session/display.go`) - Renders saved session messages
 
 ### Key Features
@@ -95,9 +97,27 @@ glow_width: 0          # Word wrap width (0 = terminal width)
 
 ## Usage Examples
 
+### One-Shot Queries
+
+Markdown rendering is automatically enabled for all `pplx run` commands:
+
+```bash
+$ pplx run "Explain quantum computing"
+**Quantum computing** is a new approach to calculation that uses principles of quantum mechanics...
+
+### Key Concepts
+- **Qubits**: The basic unit of quantum information...
+- **Superposition**: Qubits hold a combination of all possible states...
+
+## References:
+[1] What is quantum computing? - https://example.com/quantum
+```
+
+The `pplx run` command always renders markdown when output is to a terminal, regardless of the `use_glow` configuration option. This ensures consistent, beautiful output for one-shot queries.
+
 ### Interactive Mode
 
-Markdown rendering is automatically enabled in interactive mode:
+Markdown rendering is automatically enabled in interactive mode and respects the `use_glow` configuration:
 
 ```bash
 $ pplx
@@ -179,8 +199,10 @@ go test ./pkg/ui/...
 
 ## Scope
 
-- **Interactive mode only** - One-shot queries (`pplx run`) display plain text
-- **Optional dependency** - Gracefully degrades if glamour is not available
+- **Both modes** - Markdown rendering is enabled for both interactive mode (`pplx`) and one-shot queries (`pplx run`)
+- **Always-on for run command** - The `pplx run` command always uses glamour rendering when in a terminal, regardless of `use_glow` configuration
+- **Configurable for interactive mode** - Interactive mode respects the `use_glow` configuration option
+- **Optional dependency** - Gracefully degrades if glamour is not available or not a terminal
 - **Zero breaking changes** - Existing functionality is preserved
 
 ## Related Documentation
